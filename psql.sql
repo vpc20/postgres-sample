@@ -138,13 +138,37 @@ GROUP BY o.account_id, a.name
 HAVING SUM(total_amt_usd) >= 250000
 ORDER BY total_amt_usd DESC;
 
-select account_id,  EXTRACT(YEAR FROM occurred_at), sum(total_amt_usd) 
+SELECT date_trunc('day', occurred_at) as occday, SUM(standard_qty) AS standard_qty_sum
+FROM orders
+GROUP BY date_trunc('day', occurred_at)
+ORDER BY date_trunc('day', occurred_at);
+
+SELECT date_trunc('month', occurred_at) as occmon, SUM(standard_qty) AS standard_qty_sum
+FROM orders
+GROUP BY date_trunc('month', occurred_at)
+ORDER BY date_trunc('month', occurred_at);
+
+select sum(standard_qty)
 from orders
-group by account_id, EXTRACT(YEAR FROM occurred_at)
-order by account_id, EXTRACT(YEAR FROM occurred_at);
+where occurred_at between '2013-12-01 00:00:00' and '2013-12-31 23:59:59';
+
+SELECT date_part('dow', occurred_at) as day_of_week,  sum(total) as total_qty
+from orders
+group by 1
+ORDER BY 2 desc;
+
+select account_id,  date_trunc('year', occurred_at), sum(total_amt_usd) 
+from orders
+group by 1, 2
+order by 1, 2;
 
 select account_id, EXTRACT(YEAR FROM occurred_at)::INTEGER as occyr, EXTRACT(MONTH FROM occurred_at)::INTEGER as occmon, sum(total_amt_usd) 
 from orders
 group by account_id, EXTRACT(YEAR FROM occurred_at), EXTRACT(MONTH FROM occurred_at)
 order by account_id, EXTRACT(YEAR FROM occurred_at), EXTRACT(MONTH FROM occurred_at);
+
+select account_id, date_trunc('month', occurred_at), sum(total_amt_usd) 
+from orders
+group by 1, 2
+order by 1, 2
 
