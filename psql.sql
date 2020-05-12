@@ -170,5 +170,32 @@ order by account_id, EXTRACT(YEAR FROM occurred_at), EXTRACT(MONTH FROM occurred
 select account_id, date_trunc('month', occurred_at), sum(total_amt_usd) 
 from orders
 group by 1, 2
-order by 1, 2
+order by 1, 2;
 
+select *, 
+  case 
+    when channel = 'facebook' or channel = 'twitter' or channel = 'adwords'then 'yes'
+    else 'no'
+  end as using_internet
+from web_events;
+
+select account_id, occurred_at, total,
+  CASE
+    WHEN total > 500 then 'Over 500'
+    WHEN total > 300 and total <= 500 then '301 - 500'
+    WHEN total > 100 and total <= 300 then '101 - 300'
+    ELSE '100 and under'
+  END as total_group
+from orders;
+
+select
+  CASE
+    WHEN total > 500 then 'Over 500'
+    WHEN total > 300 and total <= 500 then '301 - 500'
+    WHEN total > 100 and total <= 300 then '101 - 300'
+    ELSE '100 and under'
+  END as total_group,
+  sum(total) as total_per_group
+from orders
+group by 1
+order by 1;
