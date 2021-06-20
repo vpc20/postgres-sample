@@ -199,3 +199,57 @@ select
 from orders
 group by 1
 order by 1;
+
+
+SELECT channel,
+       AVG(event_count) as avg_event_count
+FROM
+(SELECT date_trunc('day', occurred_at) as day,
+       channel,
+       count(*) as event_count
+FROM web_events
+GROUP BY 1,2
+ORDER BY 1,2) subq
+GROUP BY 1
+ORDER BY 2 DESC;
+
+
+SELECT * 
+FROM orders
+where date_trunc ('month', occurred_at) = 
+(SELECT date_trunc('month', min(occurred_at)) as min_month
+       from orders)
+order by occurred_at;
+
+
+select a.id, a.name, we.channel, count(*)  
+from accounts a
+join web_events we
+on a.id = we.account_id
+group by a.id, a.name, we.channel
+
+select t1.id, t1.name, max(ct)
+from (select a.id, a.name, we.channel, count(*) ct
+      from accounts a
+      join web_events we
+	  on a.id = we.account_id
+      group by a.id, a.name, we.channel
+      order by a.id) t1
+group by t1.id, t1.name
+
+select t3.id, t3.name, t3.channel, t3.ct
+from (select a.id, a.name, we.channel, count(*)  ct
+      from accounts a
+      join web_events we
+      on a.id = we.account_id
+      group by a.id, a.name, we.channel) t3
+join (select t1.id, t1.name, max(ct) maxchan
+      from (select a.id, a.name, we.channel, count(*) ct
+            from accounts a
+            join web_events we 
+	          on a.id = we.account_id
+            group by a.id, a.name, we.channel
+            order by a.id) t1
+      group by t1.id, t1.name) t2
+on t2.id = t3.id and t2.maxchan = t3.ct
+order by t3.id
