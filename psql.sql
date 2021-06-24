@@ -226,7 +226,7 @@ select a.id, a.name, we.channel, count(*)
 from accounts a
 join web_events we
 on a.id = we.account_id
-group by a.id, a.name, we.channel
+group by a.id, a.name, we.channel;
 
 select t1.id, t1.name, max(ct)
 from (select a.id, a.name, we.channel, count(*) ct
@@ -235,7 +235,7 @@ from (select a.id, a.name, we.channel, count(*) ct
 	  on a.id = we.account_id
       group by a.id, a.name, we.channel
       order by a.id) t1
-group by t1.id, t1.name
+group by t1.id, t1.name;
 
 select t3.id, t3.name, t3.channel, t3.ct
 from (select a.id, a.name, we.channel, count(*)  ct
@@ -252,4 +252,185 @@ join (select t1.id, t1.name, max(ct) maxchan
             order by a.id) t1
       group by t1.id, t1.name) t2
 on t2.id = t3.id and t2.maxchan = t3.ct
-order by t3.id
+order by t3.id;
+
+-- Provide the name of the sales_rep in each region with the largest amount of total_amt_usd sales.
+
+-- select r.name, sr.id, sr.name srname
+-- from region r
+-- join sales_reps sr
+-- on r.id = sr.region_id;
+
+-- select a.sales_rep_id, sum(o.total_amt_usd)
+-- from accounts a
+-- join orders o
+-- on a.id = o.account_id
+-- group by a.sales_rep_id
+-- order by a.sales_rep_id;
+
+
+-- select r.name, sr.id, sr.name srname, sreptot
+-- from region r
+-- join sales_reps sr
+-- on r.id = sr.region_id
+-- join (select a.sales_rep_id, sum(o.total_amt_usd) sreptot
+--      from accounts a
+--      join orders o
+--      on a.id = o.account_id
+--      group by a.sales_rep_id
+--      order by a.sales_rep_id) t1
+-- on sr.id = t1.sales_rep_id;
+
+-- select t2.name, max(t2.sreptot) maxsreptot
+-- from (select r.name, sr.id, sr.name srname, sreptot
+--       from region r
+--       join sales_reps sr
+--       on r.id = sr.region_id
+--       join (select a.sales_rep_id, sum(o.total_amt_usd) sreptot
+--            from accounts a
+--            join orders o
+--            on a.id = o.account_id
+--            group by a.sales_rep_id
+--            order by a.sales_rep_id) t1
+--       on sr.id = t1.sales_rep_id) t2
+-- group by t2.name
+-- order by t2.name;
+
+
+select t3.name, t3.srname, t3.sreptot 
+from (select name, max(sreptot) maxsreptot
+      from (select r.name, sr.name srname, sum(o.total_amt_usd) sreptot
+            from region r
+            join sales_reps sr
+            on r.id = sr.region_id
+            join accounts a
+            on sr.id = a.sales_rep_id
+            join orders o
+            on a.id = o.account_id
+            group by r.name, sr.name 
+            order by r.name, sr.name) t1
+      group by name
+      order by name) t2
+join (select r.name, sr.name srname, sum(o.total_amt_usd) sreptot
+      from region r
+      join sales_reps sr
+      on r.id = sr.region_id
+      join accounts a
+      on sr.id = a.sales_rep_id
+      join orders o
+      on a.id = o.account_id
+      group by r.name, sr.name 
+      order by r.name, sr.name) t3
+ on t2.maxsreptot = t3.sreptot; 
+
+-- For the region with the largest (sum) of sales total_amt_usd, how many total (count) orders were placed?
+select count(*)
+      from region r
+      join sales_reps sr
+      on r.id = sr.region_id
+      join accounts a
+      on sr.id = a.sales_rep_id
+      join orders o
+      on a.id = o.account_id
+where r.name = (select t2.name
+                from (select r.name, sum(o.total_amt_usd) regtot
+                      from region r
+                      join sales_reps sr
+                      on r.id = sr.region_id
+                      join accounts a
+                      on sr.id = a.sales_rep_id
+                      join orders o
+                      on a.id = o.account_id
+                      group by r.name
+                      order by r.name) t2
+                join (select max(regtot) maxregtot
+                      from (select r.name, sum(o.total_amt_usd) regtot
+                            from region r
+                            join sales_reps sr
+                            on r.id = sr.region_id
+                            join accounts a
+                            on sr.id = a.sales_rep_id
+                            join orders o
+                            on a.id = o.account_id
+                            group by r.name
+                            order by r.name) t1) t3
+                on t2.regtot = t3.maxregtot);
+      
+-- How many accounts had more total purchases than the account name which has bought the most standard_qty paper throughout their lifetime as a customer?
+
+-- For the customer that spent the most (in total over their lifetime as a customer) total_amt_usd, how many web_events did they have for each channel?
+select channel, count(*)
+from web_events
+where account_id = 4211
+group by 1;
+order by 1;
+
+select t2.account_id
+from (select o.account_id, sum(o.total_amt_usd ) acctot
+       from orders o
+       join accounts a
+       on o.account_id = a.id
+       group by 1
+       order by 1) t2
+join (select max(acctot) maxacctot
+      from (select o.account_id, sum(o.total_amt_usd ) acctot
+            from orders o
+            join accounts a
+            on o.account_id = a.id
+            group by 1
+            order by 1) t1) t3
+on t2.acctot = t3.maxacctot;
+
+
+-- What is the lifetime average amount spent in terms of total_amt_usd for the top 10 total spending accounts?
+select account_id, round(avg(total_amt_usd), 2) avgamt
+from orders
+group by account_id
+order by account_id;
+
+select account_id, acctot
+from (select account_id, sum(total_amt_usd) acctot
+      from orders
+      group by 1
+      order by 1) t1
+order by acctot desc
+limit 10;
+
+select t1.account_id, t1.acctot, t2.avgamt
+from (select account_id, sum(total_amt_usd) acctot
+      from orders
+      group by 1
+      order by 1) t1
+join (select account_id acc_id, round(avg(total_amt_usd), 2) avgamt
+      from orders
+      group by account_id
+      order by account_id) t2
+on account_id = acc_id
+order by acctot desc
+limit 10;
+
+with  t1 as (select account_id, sum(total_amt_usd) acctot
+             from orders
+             group by 1
+             order by 1), 
+      t2 as (select account_id acc_id, round(avg(total_amt_usd), 2) avgamt
+            from orders
+            group by account_id
+            order by account_id) 
+select t1.account_id, t1.acctot, t2.avgamt
+from  t1
+join t2
+on account_id = acc_id
+order by acctot desc
+limit 10;
+
+-- What is the lifetime average amount spent in terms of total_amt_usd, including only the companies that spent more per order, on average, than the average of all orders.
+with t1 as (select avg(total_amt_usd) avgall
+                 from orders),
+     t2 as (select account_id, avg(total_amt_usd) avgperacc
+            from orders
+            group by 1
+            order by 1)
+select account_id, round(avgperacc,2)
+from t2
+where t2.avgperacc > (select avgall from t1)
