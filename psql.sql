@@ -357,6 +357,19 @@ where r.name = (select t2.name
                 on t2.regtot = t3.maxregtot);
       
 -- How many accounts had more total purchases than the account name which has bought the most standard_qty paper throughout their lifetime as a customer?
+with t1 as (select account_id, sum(standard_amt_usd) stdsum, sum(total_amt_usd) totsum
+            from orders
+            group by 1
+            order by stdsum desc
+            limit 1),
+      t2 as (select account_id, sum(total_amt_usd) totsum
+             from orders
+             group by 1
+             order by 1)       
+select count(t2.account_id)
+from t2
+where t2.totsum > (select totsum from t1);
+
 
 -- For the customer that spent the most (in total over their lifetime as a customer) total_amt_usd, how many web_events did they have for each channel?
 select channel, count(*)
@@ -433,4 +446,4 @@ with t1 as (select avg(total_amt_usd) avgall
             order by 1)
 select account_id, round(avgperacc,2)
 from t2
-where t2.avgperacc > (select avgall from t1)
+where t2.avgperacc > (select avgall from t1);
