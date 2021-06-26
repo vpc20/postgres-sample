@@ -6,7 +6,7 @@
 select distinct right(website,3) ext, count(*)
 from accounts
 group by 1
-order by 1;
+order by 2 desc;
 
 
 -- There is much debate about how much the name (or even the first letter of a company name) matters. 
@@ -16,7 +16,7 @@ order by 1;
 select  lower(left(name, 1)) first_ltr, count(*)
 from accounts
 group by 1
-order by 1;
+order by 2 desc;
 
 -- Use the accounts table and a CASE statement to create two groups: one group of company names that 
 -- start with a number and a second group of those company names that start with a letter. 
@@ -36,3 +36,7 @@ where accgrp = 'ltrgrp';
 -- Consider vowels as a, e, i, o, and u. What proportion of company names start with a vowel, 
 -- and what percent start with anything else? 
 
+select * 
+from accounts
+where lower(left(name, 1)) in ('a', 'e', 'i', 'o', 'u')
+;
